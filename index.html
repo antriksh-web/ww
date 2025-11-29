@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+  <!-- Favicon -->
+  <link rel="icon" href="icon/epic%20face%20_%20%D0%B5%D0%BF%D0%B8%D0%BA%20%D1%84%D0%B5%D0%B9%D1%81%20_%20Roblox.png" type="image/png">
+  <link rel="shortcut icon" href="icon/epic%20face%20_%20%D0%B5%D0%BF%D0%B8%D0%BA%20%D1%84%D0%B5%D0%B9%D1%81%20_%20Roblox.png" type="image/png">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>bunta 3.0 — Images & Videos</title>
+
+<!-- Tailwind CDN (dev) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root{
+    --bg:#040509;
+    --glass: rgba(255,255,255,0.02);
+    --card-border: rgba(255,255,255,0.03);
+    --accent: linear-gradient(90deg,#06b6d4,#7c3aed);
+  }
+  body{ background: radial-gradient(1200px 400px at 10% 10%, rgba(124,58,237,0.06), transparent 12%), var(--bg); color:#e6eef3; font-family:Inter,system-ui,Arial; margin:0; padding:28px 12px; }
+  .container{ max-width:1100px; margin:0 auto; }
+  .glass{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid var(--card-border); border-radius:12px; padding:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.6); }
+  header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; }
+  h1{ margin:0; font-size:20px; font-weight:700; }
+  .muted{ color:rgba(230,238,243,0.55); font-size:13px; }
+  .btn{ background:transparent; border:1px solid rgba(255,255,255,0.05); padding:8px 10px; border-radius:10px; cursor:pointer; color:#e6eef3; transition:all .15s ease; }
+  .btn:hover{ transform:translateY(-3px); }
+  .btn.primary{ background:var(--accent); color:#021016; border:none; font-weight:600; }
+  .card{ background:transparent; border-radius:10px; padding:10px; border:1px solid var(--card-border); }
+  input, select, textarea{ background: rgba(255,255,255,0.02); color:#e6eef3; border-radius:8px; padding:8px; border:1px solid rgba(255,255,255,0.03); width:100%; }
+  .comment-box textarea{ width:100%; min-height:64px; }
+  img, video{ width:100%; height:auto; border-radius:8px; display:block; }
+  .grid-feed{ display:grid; grid-template-columns:1fr; gap:12px; }
+  @media(min-width:768px){ .grid-feed{ grid-template-columns:repeat(3,1fr); } }
+  .action-row{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .comment-box{ background: rgba(255,255,255,0.02); padding:8px; border-radius:8px; margin-top:8px; }
+  .small-muted{ font-size:12px; color:rgba(230,238,243,0.6); }
+  .tab-active{ background:var(--accent); color:#021016; border:none; }
+  .hidden{ display:none; }
+  /* Mobile-specific adjustments */
+  @media (max-width: 600px) {
+    body{ padding: 12px; }
+    .container{ max-width:100%; padding:0 6px; }
+    header{ flex-direction:column; align-items:flex-start; gap:8px; }
+    header .glass{ width:100%; display:flex; justify-content:space-between; }
+    .glass{ padding:10px; }
+    .grid-feed{ grid-template-columns:1fr; gap:10px; }
+    .card{ padding:10px; }
+    .action-row{ gap:10px; }
+    .btn{ padding:10px 12px; font-size:15px; }
+    #upload-image-row, #upload-video-row{ display:block; }
+    #upload-title{ font-size:15px; }
+    .img-wrap img, .video-wrap video{ height:auto; max-height:320px; }
+    .muted.small-muted{ font-size:12px; }
+    .comment-box{ padding:8px; }
+    .comment-box textarea{ width:100%; }
+    .hidden-mobile{ display:none; }
+    .small-muted{ font-size:12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>🔥 Bunta 3.0</h1>
+        <div class="muted small-muted">Image & Video memes — upload, like, comment (edit/delete your comments)</div>
+      </div>
+      <div class="glass flex items-center gap-3 p-2">
+        <div id="auth-controls" class="small-muted"></div>
+        <button class="btn" onclick="window.location.reload()">↻</button>
+      </div>
+    </header>
+
+    <!-- AUTH -->
+    <div id="auth-card" class="glass card mb-6">
+      <h2 style="margin:0 0 8px 0">Sign up / Sign in</h2>
+      <div style="display:grid;gap:8px;">
+        <input id="email" placeholder="Email" />
+        <input id="password" type="password" placeholder="Password (6+ chars)" />
+        <div style="display:flex;gap:8px">
+          <button class="btn primary" onclick="signup()">Signup</button>
+          <button class="btn" onclick="login()">Login</button>
+        </div>
+        <div class="small-muted">Tip: disable email confirmation in Supabase Auth if you want instant login.</div>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app" class="hidden">
+      <!-- Controls -->
+      <div class="glass card mb-6">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button id="tab-all" class="btn tab-active" onclick="setTab('all')">All</button>
+            <button id="tab-images" class="btn" onclick="setTab('images')">Images</button>
+            <button id="tab-videos" class="btn" onclick="setTab('videos')">Videos</button>
+
+            <div style="flex:1"></div>
+
+            <select id="filter-category" onchange="refreshFeed()">
+              <option value="">All Categories</option>
+              <option>Funny</option>
+              <option>Green Screen</option>
+              <option>Animals</option>
+              <option>Dark</option>
+              <option>Gaming</option>
+            </select>
+
+            <select id="sort-by" onchange="refreshFeed()">
+              <option value="newest">Newest</option>
+              <option value="most_liked">Most Liked</option>
+            </select>
+          </div>
+
+          <div id="user-area" class="small-muted"></div>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div class="glass card mb-6">
+        <h3 style="margin:0 0 8px 0">Upload Meme</h3>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+          <input id="upload-title" placeholder="Title" />
+          <select id="upload-category">
+            <option>Funny</option>
+            <option>Green Screen</option>
+            <option>Animals</option>
+            <option>Dark</option>
+            <option>Gaming</option>
+          </select>
+          <select id="upload-kind" onchange="toggleUploadKind()">
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+          </select>
+
+          <div id="upload-image-row">
+            <input id="upload-image-file" type="file" accept="image/*" />
+            <div style="margin-top:8px"><button class="btn primary" onclick="uploadMeme('image')">Upload Image Meme</button></div>
+          </div>
+
+          <div id="upload-video-row" class="hidden">
+            <input id="upload-video-file" type="file" accept="video/*" />
+            <div style="margin-top:8px"><button class="btn primary" onclick="uploadMeme('video')">Upload Video Meme</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed -->
+      <div id="feed" class="grid-feed"></div>
+
+      <!-- Dashboard -->
+      <div id="dashboard" class="mt-8 hidden">
+        <h3 style="margin:0 0 8px 0">My Uploads</h3>
+        <div id="my-uploads" class="grid-feed"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ===========================
+   Supabase client
+   =========================== */
+const sb = window.supabase.createClient(
+  "https://erdodnbfdnumywpmrvzf.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZG9kbmJmZG51bXl3cG1ydnpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTY4MTAsImV4cCI6MjA3OTczMjgxMH0.OyXlAlHPHPqqBc1Q-qWHTEjxwqrcubFDPNYmugvrows"
+);
+
+/* ===========================
+   STATE + UTILS
+   =========================== */
+let currentTab = 'all';
+function setTab(t){
+  currentTab = t;
+  document.getElementById('tab-all').classList.toggle('tab-active', t==='all');
+  document.getElementById('tab-images').classList.toggle('tab-active', t==='images');
+  document.getElementById('tab-videos').classList.toggle('tab-active', t==='videos');
+  refreshFeed();
+}
+function toggleUploadKind(){
+  const k = document.getElementById('upload-kind').value;
+  document.getElementById('upload-image-row').classList.toggle('hidden', k !== 'image');
+  document.getElementById('upload-video-row').classList.toggle('hidden', k !== 'video');
+}
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+function showErr(prefix, e){ console.error(prefix, e); alert(prefix + (e?.message ? ': ' + e.message : '')); }
+
+/* ===========================
+   AUTH
+   =========================== */
+async function signup(){
+  const email = document.getElementById('email').value?.trim();
+  const password = document.getElementById('password').value;
+  if(!email || !password) return alert('Enter email & password');
+  if(password.length < 6) return alert('Password must be at least 6 characters.');
+  try {
+    const { error } = await sb.auth.signUp({ email, password });
+    if(error) return showErr('Signup failed', error);
+    alert('Signup OK — now login');
+  } catch(e){ showErr('Signup error', e); }
+}
+async function login(){
+  const email = document.getElementById('email').value?.trim();
+  const password = document.getElementById('password').value;
+  if(!email || !password) return alert('Enter email & password');
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) return showErr('Login failed', error);
+    await startApp();
+  } catch(e){ showErr('Login error', e); }
+}
+async function logout(){ await sb.auth.signOut(); window.location.reload(); }
+
+/* ===========================
+   START / PAGE LOAD
+   =========================== */
+async function startApp(){
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const authCard = document.getElementById('auth-card');
+    const app = document.getElementById('app');
+    const authControls = document.getElementById('auth-controls');
+
+    if(!session){
+      authCard.classList.remove('hidden');
+      app.classList.add('hidden');
+      authControls.innerHTML = '';
+      return;
+    }
+
+    // Signed in
+    authCard.classList.add('hidden');
+    app.classList.remove('hidden');
+
+    const { data: { user } } = await sb.auth.getUser();
+    document.getElementById('user-area').innerHTML = `Signed in: ${escapeHtml(user.email)} • <button class="btn" onclick="toggleDashboard()">Dashboard</button> • <button class="btn" onclick="logout()">Logout</button>`;
+    authControls.innerHTML = `<div class="small-muted">User: ${escapeHtml(user.email)}</div>`;
+
+    refreshFeed();
+  } catch(e){ showErr('Start app error', e); }
+}
+startApp();
+
+/* ===========================
+   UPLOAD (image/video)
+   =========================== */
+async function uploadMeme(kind){
+  try {
+    const title = document.getElementById('upload-title').value?.trim();
+    const category = document.getElementById('upload-category').value || '';
+    if(!title) return alert('Enter title');
+    const { data: { user }, error: uerr } = await sb.auth.getUser();
+    if(uerr) return showErr('User fetch failed', uerr);
+
+    if(kind === 'image'){
+      const file = document.getElementById('upload-image-file').files[0];
+      if(!file) return alert('Select an image file');
+      const filename = Date.now() + '_' + file.name;
+      const { error } = await sb.storage.from('memes').upload(filename, file, { upsert:false });
+      if(error) return showErr('Image upload failed', error);
+      const url = `https://erdodnbfdnumywpmrvzf.supabase.co/storage/v1/object/public/memes/${encodeURIComponent(filename)}`;
+      const { error: insErr } = await sb.from('memes').insert({ user_id: user.id, title, category, image_url: url });
+      if(insErr) return showErr('DB insert failed', insErr);
+      document.getElementById('upload-image-file').value = '';
+      document.getElementById('upload-title').value = '';
+      alert('Image uploaded');
+    } else {
+      const file = document.getElementById('upload-video-file').files[0];
+      if(!file) return alert('Select a video file');
+      const filename = Date.now() + '_' + file.name;
+      const { error } = await sb.storage.from('videomeme').upload(filename, file, { upsert:false });
+      if(error) return showErr('Video upload failed', error);
+      const url = `https://erdodnbfdnumywpmrvzf.supabase.co/storage/v1/object/public/videomeme/${encodeURIComponent(filename)}`;
+      const { error: insErr } = await sb.from('videomemes').insert({ user_id: user.id, title, category, video_url: url });
+      if(insErr) return showErr('DB insert failed', insErr);
+      document.getElementById('upload-video-file').value = '';
+      document.getElementById('upload-title').value = '';
+      alert('Video uploaded');
+    }
+
+    // refresh the visible feed (only comments area updated separately)
+    refreshFeed();
+  } catch(e){ showErr('Upload error', e); }
+}
+
+/* ===========================
+   FEED (images + videos)
+   =========================== */
+let isLoadingFeed = false;
+async function refreshFeed(){
+  // prevent re-entrancy
+  if(isLoadingFeed) return;
+  isLoadingFeed = true;
+  try {
+    const container = document.getElementById('feed');
+    container.innerHTML = '';
+
+    const category = document.getElementById('filter-category').value || '';
+    const sortBy = document.getElementById('sort-by').value || 'newest';
+
+    const orderBy = (q) => {
+      if(sortBy === 'newest') return q.order('created_at', { ascending:false });
+      if(sortBy === 'most_liked') return q.order('likes', { ascending:false });
+      return q;
+    };
+
+    // Images
+    if(currentTab === 'all' || currentTab === 'images'){
+      let q = sb.from('memes').select('*');
+      if(category) q = q.eq('category', category);
+      q = orderBy(q);
+      const { data: images, error } = await q;
+      if(error) throw error;
+      for(const m of (images||[])){
+        // get comment count without re-rendering entire feed
+        const { count } = await sb.from('comments').select('*', { count:'exact' }).eq('meme_id', m.id);
+        const commentCount = count || 0;
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div class="img-wrap"><img src="${m.image_url}" alt="${escapeHtml(m.title||'')}" /></div>
+          <h4 style="margin-top:8px;font-weight:600">${escapeHtml(m.title||'')}</h4>
+          <div class="small-muted">${escapeHtml(m.category||'')}</div>
+          <div class="action-row">
+            <button class="btn" id="like-img-btn-${m.id}" onclick="likeImage('${m.id}', this)">❤️ <span id="likes-img-${m.id}">${m.likes ?? 0}</span></button>
+            <button class="btn" onclick="toggleComments('image','${m.id}', this)">💬 <span id="count-img-${m.id}">${commentCount}</span></button>
+            <a class="btn" href="${m.image_url}" download>⬇️</a>
+          </div>
+          <div id="comments-image-${m.id}" class="comment-box hidden"></div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    // Videos
+    if(currentTab === 'all' || currentTab === 'videos'){
+      let qv = sb.from('videomemes').select('*');
+      if(category) qv = qv.eq('category', category);
+      qv = orderBy(qv);
+      const { data: videos, error: verr } = await qv;
+      if(verr) throw verr;
+      for(const m of (videos||[])){
+        const { count } = await sb.from('videomeme_comments').select('*', { count:'exact' }).eq('meme_id', m.id);
+        const commentCount = count || 0;
+        const card = document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div class="video-wrap"><video src="${m.video_url}" controls></video></div>
+          <h4 style="margin-top:8px;font-weight:600">${escapeHtml(m.title||'')}</h4>
+          <div class="small-muted">${escapeHtml(m.category||'')}</div>
+          <div class="action-row">
+            <button class="btn" id="like-vid-btn-${m.id}" onclick="likeVideo('${m.id}', this)">❤️ <span id="likes-vid-${m.id}">${m.likes ?? 0}</span></button>
+            <button class="btn" onclick="toggleComments('video','${m.id}', this)">💬 <span id="count-vid-${m.id}">${commentCount}</span></button>
+            <a class="btn" href="${m.video_url}" download>⬇️</a>
+          </div>
+          <div id="comments-video-${m.id}" class="comment-box hidden"></div>
+        `;
+        container.appendChild(card);
+      }
+    }
+  } catch(e){ showErr('Refresh feed error', e); }
+  finally { isLoadingFeed = false; }
+}
+
+/* ===========================
+   LIKES (RPC) — updates visible count
+   =========================== */
+async function likeImage(memeId, btn){
+  try {
+    if(btn) btn.disabled = true;
+    const { error: rpcErr } = await sb.rpc('increment_like', { meme_id: memeId });
+    if(rpcErr) return showErr('Like RPC failed', rpcErr);
+    // fetch new likes count
+    const { data, error } = await sb.from('memes').select('likes').eq('id', memeId).single();
+    if(error) return showErr('Fetch likes failed', error);
+    const el = document.getElementById('likes-img-' + memeId);
+    if(el) el.innerText = data.likes ?? el.innerText;
+  } catch(e){ showErr('Like image error', e); }
+  finally { if(btn) btn.disabled = false; }
+}
+
+async function likeVideo(memeId, btn){
+  try {
+    if(btn) btn.disabled = true;
+    const { error: rpcErr } = await sb.rpc('increment_video_like', { meme_id: memeId });
+    if(rpcErr) return showErr('Like RPC failed', rpcErr);
+    const { data, error } = await sb.from('videomemes').select('likes').eq('id', memeId).single();
+    if(error) return showErr('Fetch likes failed', error);
+    const el = document.getElementById('likes-vid-' + memeId);
+    if(el) el.innerText = data.likes ?? el.innerText;
+  } catch(e){ showErr('Like video error', e); }
+  finally { if(btn) btn.disabled = false; }
+}
+
+/* ===========================
+   COMMENTS: toggle, load, post, edit, delete
+   =========================== */
+async function toggleComments(kind, id, btn){
+  const boxId = kind === 'image' ? `comments-image-${id}` : `comments-video-${id}`;
+  const box = document.getElementById(boxId);
+  if(!box) return;
+  if(box.classList.contains('hidden')){
+    // open and load
+    box.classList.remove('hidden');
+    // build container + form
+    box.innerHTML = `
+      <div id="list-${kind}-${id}"></div>
+      <textarea id="input-${kind}-${id}" rows="3" placeholder="Write a comment..."></textarea>
+      <div style="margin-top:8px"><button class="btn primary" onclick="postComment('${kind}','${id}', this)">Post Comment</button></div>
+    `;
+    await loadComments(kind, id);
+  } else {
+    // close & clear to avoid duplicates
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+
+async function loadComments(kind, id){
+  try {
+    const table = kind === 'image' ? 'comments' : 'videomeme_comments';
+    const { data: comments, error } = await sb.from(table).select('id,meme_id,user_id,comment,created_at').eq('meme_id', id).order('created_at',{ascending:true});
+    if(error) return showErr('Load comments failed', error);
+    const listEl = document.getElementById(`list-${kind}-${id}`);
+    if(!listEl) return;
+    listEl.innerHTML = '';
+
+    // get current user id to show edit/delete buttons only to owner
+    const { data: userData } = await sb.auth.getUser();
+    const currentUid = userData?.user?.id;
+
+    for(const c of (comments||[])){
+      const dt = new Date(c.created_at).toLocaleString();
+      const isOwner = currentUid && c.user_id === currentUid;
+      const commentCard = document.createElement('div');
+      commentCard.className = 'card mt-2';
+      commentCard.innerHTML = `
+        <div class="small-muted">${escapeHtml(c.user_id?.substring(0,8) || 'anon')} • <span style="float:right">${dt}</span></div>
+        <div style="margin-top:8px">${escapeHtml(c.comment)}</div>
+        ${isOwner ? `<div style="margin-top:8px" class="action-row">
+          <button class="btn" onclick="beginEditComment('${kind}','${id}','${c.id}','${escapeHtml(c.comment).replace(/'/g, "\\'")}')">Edit</button>
+          <button class="btn" onclick="deleteComment('${kind}','${id}','${c.id}')">Delete</button>
+        </div>` : ''}
+      `;
+      listEl.appendChild(commentCard);
+    }
+
+    // update comment count badge
+    const countEl = document.getElementById(kind === 'image' ? ('count-img-' + id) : ('count-vid-' + id));
+    if(countEl) countEl.innerText = (comments || []).length;
+  } catch(e){ showErr('Load comments error', e); }
+}
+
+function beginEditComment(kind, memeId, commentId, existingText){
+  // inline edit prompt (simple UX)
+  const newText = prompt('Edit your comment:', existingText || '');
+  if(newText === null) return; // cancelled
+  updateComment(kind, memeId, commentId, newText);
+}
+
+async function updateComment(kind, memeId, commentId, newText){
+  try {
+    if(!newText) return alert('Comment cannot be empty');
+    const table = kind === 'image' ? 'comments' : 'videomeme_comments';
+    // ensure user only updates own comment
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from(table).update({ comment: newText }).eq('id', commentId).eq('user_id', user.id);
+    if(error) return showErr('Update comment failed', error);
+    await loadComments(kind, memeId);
+  } catch(e){ showErr('Update comment error', e); }
+}
+
+async function deleteComment(kind, memeId, commentId){
+  try {
+    if(!confirm('Delete this comment?')) return;
+    const table = kind === 'image' ? 'comments' : 'videomeme_comments';
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from(table).delete().eq('id', commentId).eq('user_id', user.id);
+    if(error) return showErr('Delete comment failed', error);
+    await loadComments(kind, memeId);
+  } catch(e){ showErr('Delete comment error', e); }
+}
+
+async function postComment(kind, id, btn){
+  try {
+    if(btn) btn.disabled = true;
+    const input = document.getElementById(`input-${kind}-${id}`);
+    const text = input?.value?.trim();
+    if(!text){ if(btn) btn.disabled=false; return alert('Enter comment'); }
+    const { data: { user }, error: uerr } = await sb.auth.getUser();
+    if(uerr) return showErr('User fetch failed', uerr);
+    const table = kind === 'image' ? 'comments' : 'videomeme_comments';
+    const { error } = await sb.from(table).insert({ meme_id: id, user_id: user.id, comment: text });
+    if(error) return showErr('Post comment failed', error);
+    // clear only input and reload comments (no feed duplication)
+    input.value = '';
+    await loadComments(kind, id);
+  } catch(e){ showErr('Post comment error', e); }
+  finally { if(btn) btn.disabled=false; }
+}
+
+/* ===========================
+   DASHBOARD (user uploads)
+   =========================== */
+function toggleDashboard(){ document.getElementById('dashboard').classList.toggle('hidden'); if(!document.getElementById('dashboard').classList.contains('hidden')) loadDashboard(); }
+async function loadDashboard(){
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if(!user) return alert('Login first');
+    const { data: images } = await sb.from('memes').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
+    const { data: videos } = await sb.from('videomemes').select('*').eq('user_id', user.id).order('created_at',{ascending:false});
+    const box = document.getElementById('my-uploads');
+    box.innerHTML = '';
+    (images||[]).forEach(m => {
+      const el = document.createElement('div'); el.className='card';
+      el.innerHTML = `<img src="${m.image_url}" alt="" /><div style="margin-top:8px;font-weight:600">${escapeHtml(m.title||'')}</div>
+        <div class="small-muted">${escapeHtml(m.category||'')}</div>
+        <div style="margin-top:8px"><button class="btn" onclick="deleteImage('${m.id}')">Delete</button></div>`;
+      box.appendChild(el);
+    });
+    (videos||[]).forEach(m => {
+      const el = document.createElement('div'); el.className='card';
+      el.innerHTML = `<video src="${m.video_url}" controls></video><div style="margin-top:8px;font-weight:600">${escapeHtml(m.title||'')}</div>
+        <div class="small-muted">${escapeHtml(m.category||'')}</div>
+        <div style="margin-top:8px"><button class="btn" onclick="deleteVideo('${m.id}')">Delete</button></div>`;
+      box.appendChild(el);
+    });
+  } catch(e){ showErr('Load dashboard error', e); }
+}
+async function deleteImage(id){ try { if(!confirm('Delete this image?')) return; const { error } = await sb.from('memes').delete().eq('id', id); if(error) return showErr('Delete failed', error); await loadDashboard(); refreshFeed(); } catch(e){ showErr('Delete image error', e); } }
+async function deleteVideo(id){ try { if(!confirm('Delete this video?')) return; const { error } = await sb.from('videomemes').delete().eq('id', id); if(error) return showErr('Delete failed', error); await loadDashboard(); refreshFeed(); } catch(e){ showErr('Delete video error', e); } }
+
+/* initialize tab and feed */
+setTab('all');
+</script>
+</body>
+</html>
